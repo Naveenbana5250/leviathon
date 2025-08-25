@@ -1,0 +1,55 @@
+name: Build, Scan, Push & Sign Image
+
+on:
+  push:
+    branches: [ "main" ]   # run when code is pushed to main branch
+  workflow_dispatch:        # allow manual trigger
+
+jobs:
+  build-sign:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout repo
+    - name: Checkout source
+      uses: actions/checkout@v3
+
+    # 2. Log in to Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # 3. Build Docker image
+    - name: Build image
+      run: |
+        docker build -t docker.io/naveenbana5250/myapp:${{ github.sha }} .
+
+    # 4. Security scan with Trivy (trusted check)
+    - name: Scan image with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: docker.io/naveenbana5250/myapp:${{ github.sha }}
+        severity: CRITICAL,HIGH
+        ignore-unfixed: true
+        format: table
+    # If vulnerabilities found, job fails -> image won't be signed
+
+    # 5. Push to Docker Hub (only if scan passed)
+    - name: Push image
+      run: |
+        docker push docker.io/naveenbana5250/myapp:${{ github.sha }}
+
+    # 6. Install Cosign
+    - name: Install Cosign
+      run: |
+        wget https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64 -O cosign
+        chmod +x cosign
+        sudo mv cosign /usr/local/bin/
+
+    # 7. Sign the image with Cosign (trusted images only)
+    - name: Sign image
+      run: |
+        echo "${{ secrets.COSIGN_PASSWORD }}" | \
+        cosign sign --key cosign.key docker.io/naveenbana5250/myapp:${{ github.sha }}
