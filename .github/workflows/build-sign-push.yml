@@ -30,6 +30,8 @@ jobs:
           echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
           chmod 600 cosign.key
       - env:
+      - name: Output digest to summary
+        run: echo "Pushed digest: ${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
           cosign sign --yes --key cosign.key ${{ steps.meta.outputs.IMAGE }}@${{ steps.build.outputs.digest }}
