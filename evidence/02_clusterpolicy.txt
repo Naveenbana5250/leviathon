@@ -1,0 +1,7 @@
+NAME                  ADMISSION   BACKGROUND   READY   AGE    FAILURE POLICY   VALIDATE   MUTATE   GENERATE   VERIFY IMAGES   MESSAGE
+deny-latest           true        true         True    4d1h                    1          0        0          0               Ready
+deny-privileged       true        true         True    4d1h                    1          0        0          0               Ready
+enforce-resources     true        true         True    4d1h                    1          0        0          0               Ready
+restrict-hostpath     true        true         True    4d1h                    1          0        0          0               Ready
+restrict-registries   true        true         True    9h                      1          0        0          0               Ready
+verify-images         true        false        True    4d1h                    0          0        0          1               Ready

@@ -1,0 +1,57 @@
+Name:             good-signed
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             k3d-leviathan-local-agent-0/172.18.0.3
+Start Time:       Sat, 30 Aug 2025 02:24:04 +0530
+Labels:           <none>
+Annotations:      kyverno.io/verify-images: {"docker.io/naveenbana5250/nginx@sha256:0e1ac7f12d904a5ce077d1b5c763b5750c7985e524f6083e5eaa7e7313833440":"pass"}
+Status:           Running
+IP:               10.42.0.27
+IPs:
+  IP:  10.42.0.27
+Containers:
+  web:
+    Container ID:   containerd://397e84507c68b96b0aecc5a6b68929ff969604714e82b6aadfe5e5f9fadc2012
+    Image:          docker.io/naveenbana5250/nginx:1.25@sha256:0e1ac7f12d904a5ce077d1b5c763b5750c7985e524f6083e5eaa7e7313833440
+    Image ID:       docker.io/library/nginx@sha256:a484819eb60211f5299034ac80f6a681b06f89e65866ce91f356ed7c72af059c
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Sat, 30 Aug 2025 02:24:05 +0530
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     200m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-htvch (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-htvch:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  3m21s  default-scheduler  Successfully assigned default/good-signed to k3d-leviathan-local-agent-0
+  Normal  Pulled     3m20s  kubelet            Container image "docker.io/naveenbana5250/nginx:1.25@sha256:0e1ac7f12d904a5ce077d1b5c763b5750c7985e524f6083e5eaa7e7313833440" already present on machine
+  Normal  Created    3m20s  kubelet            Created container web
+  Normal  Started    3m20s  kubelet            Started container web

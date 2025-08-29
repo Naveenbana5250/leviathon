@@ -1,0 +1,109 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kyverno.io/v1","kind":"ClusterPolicy","metadata":{"annotations":{},"name":"verify-images"},"spec":{"background":false,"rules":[{"match":{"any":[{"resources":{"kinds":["Pod"]}}]},"name":"require-signed-images","verifyImages":[{"attestors":[{"entries":[{"keys":{"secret":{"name":"cosign-pub","namespace":"kyverno"}}}]}],"imageReferences":["docker.io/naveenbana5250/*"]}]}],"validationFailureAction":"Enforce"}}
+  creationTimestamp: "2025-08-25T19:26:02Z"
+  generation: 3
+  name: verify-images
+  resourceVersion: "329930"
+  uid: 77f1bb14-22b7-4af1-bbec-be0b4cf1afaa
+spec:
+  admission: true
+  background: false
+  emitWarning: false
+  rules:
+  - match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    name: require-signed-images
+    skipBackgroundRequests: true
+    verifyImages:
+    - attestors:
+      - entries:
+        - keys:
+            secret:
+              name: cosign-pub
+              namespace: kyverno
+            signatureAlgorithm: sha256
+          signatureAlgorithm: sha256
+      imageReferences:
+      - docker.io/naveenbana5250/*
+      mutateDigest: true
+      required: true
+      useCache: true
+      verifyDigest: true
+  validationFailureAction: Enforce
+status:
+  autogen:
+    rules:
+    - match:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Deployment
+            - Job
+            - ReplicaSet
+            - ReplicationController
+            - StatefulSet
+        resources: {}
+      name: autogen-require-signed-images
+      skipBackgroundRequests: true
+      verifyImages:
+      - attestors:
+        - entries:
+          - keys:
+              secret:
+                name: cosign-pub
+                namespace: kyverno
+              signatureAlgorithm: sha256
+            signatureAlgorithm: sha256
+        imageReferences:
+        - docker.io/naveenbana5250/*
+        mutateDigest: true
+        required: true
+        useCache: true
+        validate: {}
+        verifyDigest: true
+    - match:
+        any:
+        - resources:
+            kinds:
+            - CronJob
+        resources: {}
+      name: autogen-cronjob-require-signed-images
+      skipBackgroundRequests: true
+      verifyImages:
+      - attestors:
+        - entries:
+          - keys:
+              secret:
+                name: cosign-pub
+                namespace: kyverno
+              signatureAlgorithm: sha256
+            signatureAlgorithm: sha256
+        imageReferences:
+        - docker.io/naveenbana5250/*
+        mutateDigest: true
+        required: true
+        useCache: true
+        validate: {}
+        verifyDigest: true
+  conditions:
+  - lastTransitionTime: "2025-08-28T18:13:11Z"
+    message: Ready
+    reason: Succeeded
+    status: "True"
+    type: Ready
+  rulecount:
+    generate: 0
+    mutate: 0
+    validate: 0
+    verifyimages: 1
+  validatingadmissionpolicy:
+    generated: false
+    message: ""
