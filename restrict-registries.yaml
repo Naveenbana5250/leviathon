@@ -1,0 +1,19 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-registries
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: allowed-registries
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "Only images from Docker Hub library, gcr.io, or docker.io/naveenbana5250/* allowed."
+      pattern:
+        spec:
+          containers:
+          - image: "?:(docker.io/library/*|gcr.io/*|docker.io/naveenbana5250/*)"

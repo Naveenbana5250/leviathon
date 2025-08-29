@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-images
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+    - name: require-signed-images
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "docker.io/naveenbana5250/*"
+          attestors:
+            - entries:
+                - keys:
+                    secret:
+                      name: cosign-pub
+                      namespace: kyverno

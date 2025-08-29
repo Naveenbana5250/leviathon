@@ -1,0 +1,134 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-latest
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: disallow-latest-tag
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "Images using the 'latest' tag are not allowed."
+      pattern:
+        spec:
+          containers:
+          - name: "*"
+            image: "!*:latest"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-privileged
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: disallow-privileged
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "Privileged containers are not allowed."
+      pattern:
+        spec:
+          containers:
+          - name: "*"
+            =(securityContext):
+              =(privileged): "false"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-resources
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: require-cpu-mem-limits
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "CPU and memory requests/limits are required."
+      pattern:
+        spec:
+          containers:
+          - name: "*"
+            resources:
+              requests:
+                cpu: "?*"
+                memory: "?*"
+              limits:
+                cpu: "?*"
+                memory: "?*"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-hostpath
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: no-hostpath
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "hostPath volumes are not allowed."
+      pattern:
+        spec:
+          volumes:
+          - name: "*"
+            =(hostPath): "null"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-registries
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: allowed-registries
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    validate:
+      message: "Only images from docker.io/library, gcr.io, or docker.io/naveenbana5250/* are allowed."
+      pattern:
+        spec:
+          containers:
+          - name: "*"
+            image: "docker.io/library/*|gcr.io/*|docker.io/naveenbana5250/*"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-images
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+  - name: require-signed-images
+    match:
+      any:
+      - resources:
+          kinds: ["Pod"]
+    verifyImages:
+    - imageReferences:
+      - "docker.io/naveenbana5250/*"
+      attestors:
+      - entries:
+        - keys:
+            secret:
+              name: cosign-pub
+              key: cosign.pub
