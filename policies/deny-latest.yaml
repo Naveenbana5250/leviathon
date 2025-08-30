@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+spec:
+  admission: true
+  background: true
+  emitWarning: false
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      name: disallow-latest-tag
+      skipBackgroundRequests: true
+      validate:
+        allowExistingViolations: true
+        message: Images using the 'latest' tag are not allowed.
+        pattern:
+          spec:
+            containers:
+              - image: '!*:latest'
+                name: '*'
+  validationFailureAction: Enforce

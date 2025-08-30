@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+spec:
+  admission: true
+  background: true
+  emitWarning: false
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      name: no-hostpath
+      skipBackgroundRequests: true
+      validate:
+        allowExistingViolations: true
+        message: hostPath volumes are not allowed.
+        pattern:
+          spec:
+            volumes:
+              - =(hostPath): "null"
+                name: '*'
+  validationFailureAction: Enforce

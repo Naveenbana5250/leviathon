@@ -1,0 +1,24 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+spec:
+  admission: true
+  background: true
+  emitWarning: false
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      name: disallow-privileged
+      skipBackgroundRequests: true
+      validate:
+        allowExistingViolations: true
+        message: Privileged containers are not allowed.
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+                name: '*'
+  validationFailureAction: Enforce

@@ -1,0 +1,29 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+spec:
+  admission: true
+  background: true
+  emitWarning: false
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      name: require-cpu-mem-limits
+      skipBackgroundRequests: true
+      validate:
+        allowExistingViolations: true
+        message: CPU and memory requests/limits are required.
+        pattern:
+          spec:
+            containers:
+              - name: '*'
+                resources:
+                  limits:
+                    cpu: ?*
+                    memory: ?*
+                  requests:
+                    cpu: ?*
+                    memory: ?*
+  validationFailureAction: Enforce
