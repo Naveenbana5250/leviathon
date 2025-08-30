@@ -62,15 +62,8 @@ jobs:
           COSIGN_KEY_SECRET: ${{ secrets.COSIGN_KEY }}
         run: |
           printf '%s' "$COSIGN_KEY_SECRET" > cosign.key.raw
-          python3 - <<'PY'
-import re
-s=open('cosign.key.raw','r',encoding='utf-8').read()
-s=s.strip()
-if s.startswith('"') and s.endswith('"'):
-    s=s[1:-1]
-s=s.replace('\r\n','\n').replace('\\n','\n')
-open('cosign.key','w',encoding='utf-8').write(s+'\n')
-PY
+          # Strip wrapping quotes if present, turn literal '\n' into real newlines, fix CRLF
+          perl -0777 -pe 's/^\s*"//; s/"\s*$//; s/\r\n/\n/g; s/\\n/\n/g' cosign.key.raw > cosign.key
           head -1 cosign.key | grep -q 'BEGIN ENCRYPTED SIGSTORE PRIVATE KEY' || { echo 'Bad cosign.key header'; exit 1; }
           tail -1 cosign.key | grep -q 'END ENCRYPTED SIGSTORE PRIVATE KEY'   || { echo 'Bad cosign.key footer'; exit 1; }
           chmod 600 cosign.key
