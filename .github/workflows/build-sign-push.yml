@@ -1,37 +1,64 @@
-name: Build, Push & Sign Docker Image
+name: build-sign-push
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
+    paths:
+      - Dockerfile
+      - .github/workflows/build-sign-push.yml
   workflow_dispatch:
+
 env:
-  IMAGE_NAME: myapp
+  IMAGE: docker.io/naveenbana5250/signed-demo
+
+permissions:
+  contents: read
+
 jobs:
   build-sign-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] || { echo "Missing DOCKERHUB_USERNAME"; exit 1; }
+          [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]    || { echo "Missing DOCKERHUB_TOKEN"; exit 1; }
+          [ -n "${{ secrets.COSIGN_PRIVATE_KEY }}" ] || { echo "Missing COSIGN_PRIVATE_KEY"; exit 1; }
+          [ -n "${{ secrets.COSIGN_PASSWORD }}" ]    || { echo "Missing COSIGN_PASSWORD"; exit 1; }
+
       - uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
       - id: meta
-        run: |
-          echo "IMAGE=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
-          echo "TAG=${GITHUB_SHA::12}" >> $GITHUB_OUTPUT
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=demo
+            type=sha,format=long
+
       - id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
           push: true
-          tags: ${{ steps.meta.outputs.IMAGE }}:${{ steps.meta.outputs.TAG }}
-          provenance: false
+          context: .
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
       - uses: sigstore/cosign-installer@v3.7.0
-      - run: |
-          echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+
+      - name: Write cosign key (PEM)
+        run: |
+          printf -- '%s' "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
           chmod 600 cosign.key
-      - env:
-      - name: Output digest to summary
-        run: echo "Pushed digest: ${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Sign by digest
+        env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
-          cosign sign --yes --key cosign.key ${{ steps.meta.outputs.IMAGE }}@${{ steps.build.outputs.digest }}
+          cosign sign --yes --key cosign.key ${IMAGE}@${{ steps.build.outputs.digest }}
