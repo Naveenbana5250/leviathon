@@ -25,10 +25,10 @@ jobs:
 
       - name: Preflight secrets
         run: |
-          [ -n "${{ secrets.DOCKER_USERNAME }}" ]   || { echo "Missing DOCKER_USERNAME"; exit 1; }
-          [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]   || { echo "Missing DOCKERHUB_TOKEN"; exit 1; }
-          [ -n "${{ secrets.COSIGN_KEY }}" ]        || { echo "Missing COSIGN_KEY"; exit 1; }
-          [ -n "${{ secrets.COSIGN_PASSWORD }}" ]   || { echo "Missing COSIGN_PASSWORD"; exit 1; }
+          [ -n "${{ secrets.DOCKER_USERNAME }}" ] || { echo "Missing DOCKER_USERNAME"; exit 1; }
+          [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ] || { echo "Missing DOCKERHUB_TOKEN"; exit 1; }
+          [ -n "${{ secrets.COSIGN_KEY }}" ]      || { echo "Missing COSIGN_KEY"; exit 1; }
+          [ -n "${{ secrets.COSIGN_PASSWORD }}" ] || { echo "Missing COSIGN_PASSWORD"; exit 1; }
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -57,10 +57,24 @@ jobs:
 
       - uses: sigstore/cosign-installer@v3.7.0
 
-      - name: Write cosign private key (PEM)
+      - name: Write cosign private key (normalize)
+        env:
+          COSIGN_KEY_SECRET: ${{ secrets.COSIGN_KEY }}
         run: |
-          printf '%s' "${{ secrets.COSIGN_KEY }}" > cosign.key
+          printf '%s' "$COSIGN_KEY_SECRET" > cosign.key.raw
+          python3 - <<'PY'
+import re
+s=open('cosign.key.raw','r',encoding='utf-8').read()
+s=s.strip()
+if s.startswith('"') and s.endswith('"'):
+    s=s[1:-1]
+s=s.replace('\r\n','\n').replace('\\n','\n')
+open('cosign.key','w',encoding='utf-8').write(s+'\n')
+PY
+          head -1 cosign.key | grep -q 'BEGIN ENCRYPTED SIGSTORE PRIVATE KEY' || { echo 'Bad cosign.key header'; exit 1; }
+          tail -1 cosign.key | grep -q 'END ENCRYPTED SIGSTORE PRIVATE KEY'   || { echo 'Bad cosign.key footer'; exit 1; }
           chmod 600 cosign.key
+          rm -f cosign.key.raw
 
       - name: Sign image by digest with cosign
         env:
